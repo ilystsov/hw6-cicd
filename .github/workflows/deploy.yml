@@ -5,23 +5,26 @@ on:
     workflows: [ "Static Checks" ]
     types:
       - completed
-  push:
-    branches:
-      - '*'
+  
 
 jobs:
   upload:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Check out repository
+        uses: actions/checkout@v4
       - name: Login to Docker Hub
-        run: echo ${{ secrets.GH_PSW }} | docker login -u ${{ secrets.GH_USR }} --password-stdin
-      - name: stub env
-        run: cp .env.example .env
-      - name: build image
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DH_USR }}
+          password: ${{ secrets.DH_PSW }}
+      - name: Build image
         run: |
           docker-compose build server
+      - name: Tag the Docker image
+        run: |
+          docker tag server_image:latest ${{ secrets.DH_REP_NAME }}:latest
       - name: Push the Docker image to Docker Hub
         run: |
-          docker push 
+          docker push ${{ secrets.DH_REP_NAME }}:latest
